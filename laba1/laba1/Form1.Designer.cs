@@ -7,7 +7,6 @@
         private MenuStrip menuStrip;
         private ToolStripMenuItem menuFile;
         private ToolStripMenuItem menuFileClear;
-        private ToolStripMenuItem menuFileExit;
         private ToolStripMenuItem menuSegments;
         private ToolStripMenuItem menuSegDda;
         private ToolStripMenuItem menuSegBresenham;
@@ -19,23 +18,6 @@
         private ToolStripMenuItem menuCurveParabola;
         private ToolStripMenuItem menuMode;
         private ToolStripMenuItem menuModeDebug;
-        private ToolStripMenuItem menuHelp;
-        private ToolStripMenuItem menuHelpAbout;
-
-        private ToolStrip tsSegments;
-        private ToolStripLabel lblSegments;
-        private ToolStripButton btnDda;
-        private ToolStripButton btnBresenham;
-        private ToolStripButton btnWu;
-        private ToolStripSeparator sepSegments;
-        private ToolStripButton btnClear;
-
-        private ToolStrip tsCurves;
-        private ToolStripLabel lblCurves;
-        private ToolStripButton btnCircle;
-        private ToolStripButton btnEllipse;
-        private ToolStripButton btnHyperbola;
-        private ToolStripButton btnParabola;
 
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
@@ -71,7 +53,6 @@
             menuStrip = new MenuStrip();
             menuFile = new ToolStripMenuItem();
             menuFileClear = new ToolStripMenuItem();
-            menuFileExit = new ToolStripMenuItem();
             menuSegments = new ToolStripMenuItem();
             menuSegDda = new ToolStripMenuItem();
             menuSegBresenham = new ToolStripMenuItem();
@@ -83,23 +64,6 @@
             menuCurveParabola = new ToolStripMenuItem();
             menuMode = new ToolStripMenuItem();
             menuModeDebug = new ToolStripMenuItem();
-            menuHelp = new ToolStripMenuItem();
-            menuHelpAbout = new ToolStripMenuItem();
-
-            tsSegments = new ToolStrip();
-            lblSegments = new ToolStripLabel();
-            btnDda = new ToolStripButton();
-            btnBresenham = new ToolStripButton();
-            btnWu = new ToolStripButton();
-            sepSegments = new ToolStripSeparator();
-            btnClear = new ToolStripButton();
-
-            tsCurves = new ToolStrip();
-            lblCurves = new ToolStripLabel();
-            btnCircle = new ToolStripButton();
-            btnEllipse = new ToolStripButton();
-            btnHyperbola = new ToolStripButton();
-            btnParabola = new ToolStripButton();
 
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
@@ -117,8 +81,6 @@
             stepsGrid = new DataGridView();
 
             menuStrip.SuspendLayout();
-            tsSegments.SuspendLayout();
-            tsCurves.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitMain).BeginInit();
             splitMain.Panel1.SuspendLayout();
             splitMain.Panel2.SuspendLayout();
@@ -138,7 +100,7 @@
             //
             menuStrip.Items.AddRange(new ToolStripItem[]
             {
-                menuFile, menuSegments, menuCurves, menuMode, menuHelp
+                menuFile, menuSegments, menuCurves, menuMode
             });
             menuStrip.Dock = DockStyle.Top;
             menuStrip.Location = new Point(0, 0);
@@ -146,17 +108,13 @@
             menuStrip.Size = new Size(1100, 24);
             menuStrip.Text = "menuStrip";
 
-            menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuFileClear, menuFileExit });
+            menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuFileClear });
             menuFile.Name = "menuFile";
             menuFile.Text = "Файл";
 
             menuFileClear.Name = "menuFileClear";
             menuFileClear.Text = "Очистить";
             menuFileClear.Click += menuFileClear_Click;
-
-            menuFileExit.Name = "menuFileExit";
-            menuFileExit.Text = "Выход";
-            menuFileExit.Click += menuFileExit_Click;
 
             menuSegments.DropDownItems.AddRange(new ToolStripItem[]
             {
@@ -216,105 +174,6 @@
             menuModeDebug.Text = "Отладочный режим";
             menuModeDebug.CheckedChanged += menuModeDebug_CheckedChanged;
 
-            menuHelp.DropDownItems.AddRange(new ToolStripItem[] { menuHelpAbout });
-            menuHelp.Name = "menuHelp";
-            menuHelp.Text = "Справка";
-
-            menuHelpAbout.Name = "menuHelpAbout";
-            menuHelpAbout.Text = "Как пользоваться";
-            menuHelpAbout.Click += menuHelpAbout_Click;
-
-            //
-            // tsSegments — панель «Отрезки»
-            //
-            tsSegments.Dock = DockStyle.Top;
-            tsSegments.GripStyle = ToolStripGripStyle.Hidden;
-            tsSegments.Items.AddRange(new ToolStripItem[]
-            {
-                lblSegments, btnDda, btnBresenham, btnWu, sepSegments, btnClear
-            });
-            tsSegments.Location = new Point(0, 24);
-            tsSegments.Name = "tsSegments";
-            tsSegments.Size = new Size(1100, 25);
-            tsSegments.Text = "Отрезки";
-
-            lblSegments.Name = "lblSegments";
-            lblSegments.Text = "Отрезки:";
-
-            btnDda.CheckOnClick = true;
-            btnDda.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnDda.Name = "btnDda";
-            btnDda.Tag = DrawTool.LineDda;
-            btnDda.Text = "ЦДА";
-            btnDda.Click += Tool_Click;
-
-            btnBresenham.CheckOnClick = true;
-            btnBresenham.Checked = true;
-            btnBresenham.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnBresenham.Name = "btnBresenham";
-            btnBresenham.Tag = DrawTool.LineBresenham;
-            btnBresenham.Text = "Брезенхем";
-            btnBresenham.Click += Tool_Click;
-
-            btnWu.CheckOnClick = true;
-            btnWu.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnWu.Name = "btnWu";
-            btnWu.Tag = DrawTool.LineWu;
-            btnWu.Text = "Ву";
-            btnWu.Click += Tool_Click;
-
-            sepSegments.Name = "sepSegments";
-
-            btnClear.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnClear.Name = "btnClear";
-            btnClear.Text = "Очистить";
-            btnClear.Click += btnClear_Click;
-
-            //
-            // tsCurves — панель «Линии второго порядка»
-            //
-            tsCurves.Dock = DockStyle.Top;
-            tsCurves.GripStyle = ToolStripGripStyle.Hidden;
-            tsCurves.Items.AddRange(new ToolStripItem[]
-            {
-                lblCurves, btnCircle, btnEllipse, btnHyperbola, btnParabola
-            });
-            tsCurves.Location = new Point(0, 49);
-            tsCurves.Name = "tsCurves";
-            tsCurves.Size = new Size(1100, 25);
-            tsCurves.Text = "Линии второго порядка";
-
-            lblCurves.Name = "lblCurves";
-            lblCurves.Text = "Линии второго порядка:";
-
-            btnCircle.CheckOnClick = true;
-            btnCircle.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnCircle.Name = "btnCircle";
-            btnCircle.Tag = DrawTool.Circle;
-            btnCircle.Text = "Окружность";
-            btnCircle.Click += Tool_Click;
-
-            btnEllipse.CheckOnClick = true;
-            btnEllipse.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnEllipse.Name = "btnEllipse";
-            btnEllipse.Tag = DrawTool.Ellipse;
-            btnEllipse.Text = "Эллипс";
-            btnEllipse.Click += Tool_Click;
-
-            btnHyperbola.CheckOnClick = true;
-            btnHyperbola.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnHyperbola.Name = "btnHyperbola";
-            btnHyperbola.Tag = DrawTool.Hyperbola;
-            btnHyperbola.Text = "Гипербола";
-            btnHyperbola.Click += Tool_Click;
-
-            btnParabola.CheckOnClick = true;
-            btnParabola.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            btnParabola.Name = "btnParabola";
-            btnParabola.Tag = DrawTool.Parabola;
-            btnParabola.Text = "Парабола";
-            btnParabola.Click += Tool_Click;
-
             //
             // statusStrip
             //
@@ -334,12 +193,12 @@
             // splitMain
             //
             splitMain.Dock = DockStyle.Fill;
-            splitMain.Location = new Point(0, 74);
+            splitMain.Location = new Point(0, 24);
             splitMain.Name = "splitMain";
             splitMain.Orientation = Orientation.Vertical;
             splitMain.Panel2Collapsed = true;
             splitMain.Panel2MinSize = 280;
-            splitMain.Size = new Size(1100, 604);
+            splitMain.Size = new Size(1100, 654);
             splitMain.SplitterDistance = 720;
             splitMain.TabIndex = 0;
 
@@ -351,7 +210,7 @@
             pictureBox.Dock = DockStyle.Fill;
             pictureBox.Location = new Point(0, 0);
             pictureBox.Name = "pictureBox";
-            pictureBox.Size = new Size(720, 604);
+            pictureBox.Size = new Size(720, 654);
             pictureBox.TabIndex = 0;
             pictureBox.TabStop = false;
             pictureBox.MouseClick += PictureBox_MouseClick;
@@ -367,7 +226,7 @@
             debugPanel.Dock = DockStyle.Fill;
             debugPanel.Name = "debugPanel";
             debugPanel.Padding = new Padding(6);
-            debugPanel.Size = new Size(376, 604);
+            debugPanel.Size = new Size(376, 654);
 
             //
             // splitDebug — сетка сверху, таблица шагов снизу
@@ -378,11 +237,10 @@
             splitDebug.Orientation = Orientation.Horizontal;
             splitDebug.Panel1MinSize = 180;
             splitDebug.Panel2MinSize = 120;
-            splitDebug.Size = new Size(364, 592);
+            splitDebug.Size = new Size(364, 642);
             splitDebug.SplitterDistance = 340;
             splitDebug.TabIndex = 0;
 
-            // Panel1 debug: title + info + track + scrollable grid
             lblDebugTitle.Dock = DockStyle.Top;
             lblDebugTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblDebugTitle.Height = 22;
@@ -462,11 +320,8 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1100, 700);
-            // Порядок важен для Dock: Fill → Bottom → Top-панели → MenuStrip
             Controls.Add(splitMain);
             Controls.Add(statusStrip);
-            Controls.Add(tsCurves);
-            Controls.Add(tsSegments);
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
             MinimumSize = new Size(900, 600);
@@ -476,10 +331,6 @@
 
             menuStrip.ResumeLayout(false);
             menuStrip.PerformLayout();
-            tsSegments.ResumeLayout(false);
-            tsSegments.PerformLayout();
-            tsCurves.ResumeLayout(false);
-            tsCurves.PerformLayout();
             splitMain.Panel1.ResumeLayout(false);
             splitMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitMain).EndInit();

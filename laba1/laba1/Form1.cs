@@ -10,9 +10,9 @@ public partial class Form1 : Form
     private DrawTool _tool = DrawTool.LineBresenham;
     private bool _debugMode;
     private Point? _firstPoint;
-    private Bitmap _canvas = null!;
+    private Bitmap? _canvas;
     private RasterResult? _lastResult;
-    private readonly List<(RasterResult result, Color color)> _layers = [];
+    private readonly List<RasterResult> _layers = [];
     private bool _syncingStepSelection;
 
     // Кеш границ сетки для текущего шага
@@ -22,21 +22,13 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-        KeyPreview = true;
         ResetCanvas();
-        UpdateToolUi();
         statusLabel.Text = ToolHint();
     }
 
     private void menuFileClear_Click(object? sender, EventArgs e) => ClearAll();
 
-    private void menuFileExit_Click(object? sender, EventArgs e) => Close();
-
-    private void menuHelpAbout_Click(object? sender, EventArgs e) => ShowHelp();
-
-    private void btnClear_Click(object? sender, EventArgs e) => ClearAll();
-
-    /// <summary>Общий обработчик меню и кнопок инструментов (Tag = DrawTool).</summary>
+    /// <summary>Общий обработчик меню инструментов (Tag = DrawTool).</summary>
     private void Tool_Click(object? sender, EventArgs e)
     {
         if (sender is ToolStripItem { Tag: DrawTool tool })
@@ -100,20 +92,8 @@ public partial class Form1 : Form
     {
         _tool = tool;
         _firstPoint = null;
-        UpdateToolUi();
         statusLabel.Text = ToolHint();
         pictureBox.Invalidate();
-    }
-
-    private void UpdateToolUi()
-    {
-        btnDda.Checked = _tool == DrawTool.LineDda;
-        btnBresenham.Checked = _tool == DrawTool.LineBresenham;
-        btnWu.Checked = _tool == DrawTool.LineWu;
-        btnCircle.Checked = _tool == DrawTool.Circle;
-        btnEllipse.Checked = _tool == DrawTool.Ellipse;
-        btnHyperbola.Checked = _tool == DrawTool.Hyperbola;
-        btnParabola.Checked = _tool == DrawTool.Parabola;
     }
 
     private string ToolHint() => _tool switch
@@ -127,17 +107,6 @@ public partial class Form1 : Form
         DrawTool.Parabola => "Парабола: 1) вершина  2) точка на ветви (задаёт p и длину)",
         _ => "Выберите инструмент"
     };
-
-    private static void ShowHelp()
-    {
-        MessageBox.Show(
-            @"1. Отрезки — ЦДА / Брезенхем / Ву (меню или панель «Отрезки»).\n" +
-            @"2. Кривые — окружность, эллипс, гипербола, парабола (панель «Линии второго порядка»).\n" +
-            @"3. Режим → «Отладочный режим» — сетка (с прокруткой) и таблица шагов.\n\n" +
-            @"Построение — щелчками мыши по холсту (обычно две точки).\n" +
-            @"В отладке разделитель между сеткой и таблицей можно двигать.",
-            @"Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
 
     private void ResetCanvas()
     {
@@ -155,11 +124,11 @@ public partial class Form1 : Form
         {
             g.Clear(Color.White);
         }
-        old.Dispose();
+        old?.Dispose();
         pictureBox.Image = _canvas;
-        foreach (var (result, color) in _layers)
+        foreach (var result in _layers)
         {
-            DrawPixelsOnly(result, color);
+            DrawPixelsOnly(result);
         }
         pictureBox.Invalidate();
     }
@@ -216,8 +185,8 @@ public partial class Form1 : Form
         };
 
         _lastResult = result;
-        _layers.Add((result, Color.Black));
-        DrawResult(result, Color.Black);
+        _layers.Add(result);
+        DrawResult(result);
         statusLabel.Text = $@"{_tool}: построено, пикселей={result.Pixels.Count}, шагов={result.Steps.Count}";
 
         if (_debugMode)
@@ -256,14 +225,19 @@ public partial class Form1 : Form
         return CurveAlgorithms.Parabola(vertex.X, vertex.Y, param, extent);
     }
 
-    private void DrawResult(RasterResult result, Color color)
+    private void DrawResult(RasterResult result)
     {
-        DrawPixelsOnly(result, color);
+        DrawPixelsOnly(result);
         pictureBox.Invalidate();
     }
 
-    private void DrawPixelsOnly(RasterResult result, Color color)
+    private void DrawPixelsOnly(RasterResult result)
     {
+        if (_canvas is null)
+        {
+            return;
+        }
+
         foreach (var px in result.Pixels)
         {
             if (px.X < 0 || px.Y < 0 || px.X >= _canvas.Width || px.Y >= _canvas.Height)
@@ -273,16 +247,16 @@ public partial class Form1 : Form
 
             if (px.Intensity >= 0.999f)
             {
-                _canvas.SetPixel(px.X, px.Y, color);
+                _canvas.SetPixel(px.X, px.Y, Color.Black);
             }
             else
             {
                 var bg = _canvas.GetPixel(px.X, px.Y);
                 var t = Math.Clamp(px.Intensity, 0f, 1f);
                 var blended = Color.FromArgb(
-                    (int)(color.R * t + bg.R * (1 - t)),
-                    (int)(color.G * t + bg.G * (1 - t)),
-                    (int)(color.B * t + bg.B * (1 - t)));
+                    (int)(Color.Black.R * t + bg.R * (1 - t)),
+                    (int)(Color.Black.G * t + bg.G * (1 - t)),
+                    (int)(Color.Black.B * t + bg.B * (1 - t)));
                 _canvas.SetPixel(px.X, px.Y, blended);
             }
         }
@@ -446,8 +420,6 @@ public partial class Form1 : Form
         }
 
         using var gridPen = new Pen(Color.LightGray);
-        using var axisFont = new Font("Consolas", 7);
-        using var brush = new SolidBrush(Color.DimGray);
 
         for (var y = _gridMinY; y <= _gridMaxY; y++)
         {
@@ -478,9 +450,5 @@ public partial class Form1 : Form
                 g.DrawRectangle(hi, px, py, GridCellSize, GridCellSize);
             }
         }
-
-        g.DrawString(
-            $"Ячейка {GridCellSize}px  |  X:[{_gridMinX}..{_gridMaxX}]  Y:[{_gridMinY}..{_gridMaxY}]  |  прокрутка: мышь/колёсико",
-            axisFont, brush, 4, 4);
     }
 }
