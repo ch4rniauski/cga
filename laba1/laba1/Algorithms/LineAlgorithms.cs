@@ -112,7 +112,9 @@ public static class LineAlgorithms
 
         var dx = x1 - x0;
         var dy = y1 - y0;
-        var gradient = dx == 0 ? 1f : (float)dy / dx;
+        var gradient = dx == 0
+            ? 1f
+            : (float)dy / dx;
 
         // Первый конец
         var xEnd = x0;
@@ -182,9 +184,13 @@ public static class LineAlgorithms
         void Plot(int x, int y, float c)
         {
             if (steep)
+            {
                 result.AddPixel(y, x, c);
+            }
             else
+            {
                 result.AddPixel(x, y, c);
+            }
         }
     }
 
@@ -197,7 +203,10 @@ public static class LineAlgorithms
     private static Dictionary<string, string> Dict(params (string k, string v)[] pairs)
     {
         var d = new Dictionary<string, string>();
-        foreach (var (k, v) in pairs) d[k] = v;
+        foreach (var (k, v) in pairs)
+        {
+            d[k] = v;
+        }
         return d;
     }
 }

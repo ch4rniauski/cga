@@ -152,9 +152,11 @@
 
             menuFileClear.Name = "menuFileClear";
             menuFileClear.Text = "Очистить";
+            menuFileClear.Click += menuFileClear_Click;
 
             menuFileExit.Name = "menuFileExit";
             menuFileExit.Text = "Выход";
+            menuFileExit.Click += menuFileExit_Click;
 
             menuSegments.DropDownItems.AddRange(new ToolStripItem[]
             {
@@ -164,13 +166,19 @@
             menuSegments.Text = "Отрезки";
 
             menuSegDda.Name = "menuSegDda";
+            menuSegDda.Tag = DrawTool.LineDda;
             menuSegDda.Text = "ЦДА";
+            menuSegDda.Click += Tool_Click;
 
             menuSegBresenham.Name = "menuSegBresenham";
+            menuSegBresenham.Tag = DrawTool.LineBresenham;
             menuSegBresenham.Text = "Брезенхем (целочисленный)";
+            menuSegBresenham.Click += Tool_Click;
 
             menuSegWu.Name = "menuSegWu";
+            menuSegWu.Tag = DrawTool.LineWu;
             menuSegWu.Text = "Ву";
+            menuSegWu.Click += Tool_Click;
 
             menuCurves.DropDownItems.AddRange(new ToolStripItem[]
             {
@@ -180,16 +188,24 @@
             menuCurves.Text = "Линии второго порядка";
 
             menuCurveCircle.Name = "menuCurveCircle";
+            menuCurveCircle.Tag = DrawTool.Circle;
             menuCurveCircle.Text = "Окружность";
+            menuCurveCircle.Click += Tool_Click;
 
             menuCurveEllipse.Name = "menuCurveEllipse";
+            menuCurveEllipse.Tag = DrawTool.Ellipse;
             menuCurveEllipse.Text = "Эллипс";
+            menuCurveEllipse.Click += Tool_Click;
 
             menuCurveHyperbola.Name = "menuCurveHyperbola";
+            menuCurveHyperbola.Tag = DrawTool.Hyperbola;
             menuCurveHyperbola.Text = "Гипербола";
+            menuCurveHyperbola.Click += Tool_Click;
 
             menuCurveParabola.Name = "menuCurveParabola";
+            menuCurveParabola.Tag = DrawTool.Parabola;
             menuCurveParabola.Text = "Парабола";
+            menuCurveParabola.Click += Tool_Click;
 
             menuMode.DropDownItems.AddRange(new ToolStripItem[] { menuModeDebug });
             menuMode.Name = "menuMode";
@@ -198,6 +214,7 @@
             menuModeDebug.CheckOnClick = true;
             menuModeDebug.Name = "menuModeDebug";
             menuModeDebug.Text = "Отладочный режим";
+            menuModeDebug.CheckedChanged += menuModeDebug_CheckedChanged;
 
             menuHelp.DropDownItems.AddRange(new ToolStripItem[] { menuHelpAbout });
             menuHelp.Name = "menuHelp";
@@ -205,6 +222,7 @@
 
             menuHelpAbout.Name = "menuHelpAbout";
             menuHelpAbout.Text = "Как пользоваться";
+            menuHelpAbout.Click += menuHelpAbout_Click;
 
             //
             // tsSegments — панель «Отрезки»
@@ -226,24 +244,31 @@
             btnDda.CheckOnClick = true;
             btnDda.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnDda.Name = "btnDda";
+            btnDda.Tag = DrawTool.LineDda;
             btnDda.Text = "ЦДА";
+            btnDda.Click += Tool_Click;
 
             btnBresenham.CheckOnClick = true;
             btnBresenham.Checked = true;
             btnBresenham.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnBresenham.Name = "btnBresenham";
+            btnBresenham.Tag = DrawTool.LineBresenham;
             btnBresenham.Text = "Брезенхем";
+            btnBresenham.Click += Tool_Click;
 
             btnWu.CheckOnClick = true;
             btnWu.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnWu.Name = "btnWu";
+            btnWu.Tag = DrawTool.LineWu;
             btnWu.Text = "Ву";
+            btnWu.Click += Tool_Click;
 
             sepSegments.Name = "sepSegments";
 
             btnClear.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnClear.Name = "btnClear";
             btnClear.Text = "Очистить";
+            btnClear.Click += btnClear_Click;
 
             //
             // tsCurves — панель «Линии второго порядка»
@@ -265,22 +290,30 @@
             btnCircle.CheckOnClick = true;
             btnCircle.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnCircle.Name = "btnCircle";
+            btnCircle.Tag = DrawTool.Circle;
             btnCircle.Text = "Окружность";
+            btnCircle.Click += Tool_Click;
 
             btnEllipse.CheckOnClick = true;
             btnEllipse.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnEllipse.Name = "btnEllipse";
+            btnEllipse.Tag = DrawTool.Ellipse;
             btnEllipse.Text = "Эллипс";
+            btnEllipse.Click += Tool_Click;
 
             btnHyperbola.CheckOnClick = true;
             btnHyperbola.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnHyperbola.Name = "btnHyperbola";
+            btnHyperbola.Tag = DrawTool.Hyperbola;
             btnHyperbola.Text = "Гипербола";
+            btnHyperbola.Click += Tool_Click;
 
             btnParabola.CheckOnClick = true;
             btnParabola.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnParabola.Name = "btnParabola";
+            btnParabola.Tag = DrawTool.Parabola;
             btnParabola.Text = "Парабола";
+            btnParabola.Click += Tool_Click;
 
             //
             // statusStrip
@@ -321,6 +354,9 @@
             pictureBox.Size = new Size(720, 604);
             pictureBox.TabIndex = 0;
             pictureBox.TabStop = false;
+            pictureBox.MouseClick += PictureBox_MouseClick;
+            pictureBox.Paint += PictureBox_Paint;
+            pictureBox.Resize += pictureBox_Resize;
 
             splitMain.Panel1.Controls.Add(pictureBox);
 
@@ -364,6 +400,7 @@
             stepTrack.Maximum = 0;
             stepTrack.Name = "stepTrack";
             stepTrack.TickStyle = TickStyle.None;
+            stepTrack.ValueChanged += stepTrack_ValueChanged;
 
             gridScrollHost.AutoScroll = true;
             gridScrollHost.BackColor = Color.Gainsboro;
@@ -376,6 +413,7 @@
             gridCanvas.Location = new Point(0, 0);
             gridCanvas.Name = "gridCanvas";
             gridCanvas.Size = new Size(200, 200);
+            gridCanvas.Paint += GridCanvas_Paint;
 
             splitDebug.Panel1.Controls.Add(gridScrollHost);
             splitDebug.Panel1.Controls.Add(stepTrack);
@@ -413,6 +451,7 @@
                 HeaderText = "Переменные",
                 FillWeight = 50
             });
+            stepsGrid.SelectionChanged += stepsGrid_SelectionChanged;
 
             splitDebug.Panel2.Controls.Add(stepsGrid);
             splitMain.Panel2.Controls.Add(debugPanel);

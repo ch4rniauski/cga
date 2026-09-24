@@ -166,7 +166,10 @@ public static class CurveAlgorithms
             result.AddStep($"Шаг {step} R1 ({pixel})", SymEllipse(xc, yc, (int)x, (int)y),
                 Dict(("пиксель", pixel), ("x", x.ToString()), ("y", y.ToString()), ("Δ", delta.ToString())));
 
-            if (y < 0) break;
+            if (y < 0)
+            {
+                break;
+            }
         }
 
         // Регион 2
@@ -345,25 +348,33 @@ public static class CurveAlgorithms
     private static void PlotCirclePoints(RasterResult r, int xc, int yc, int x, int y)
     {
         foreach (var p in SymPoints(xc, yc, x, y))
+        {
             r.AddPixel(p.X, p.Y);
+        }
     }
 
     private static void PlotEllipsePoints(RasterResult r, int xc, int yc, int x, int y)
     {
         foreach (var p in SymEllipse(xc, yc, x, y))
+        {
             r.AddPixel(p.X, p.Y);
+        }
     }
 
     private static void PlotHyperbola(RasterResult r, int xc, int yc, int x, int y)
     {
         foreach (var p in SymHyperbola(xc, yc, x, y))
+        {
             r.AddPixel(p.X, p.Y);
+        }
     }
 
     private static void PlotParabola(RasterResult r, int xc, int yc, int x, int y)
     {
         foreach (var p in SymParabola(xc, yc, x, y))
+        {
             r.AddPixel(p.X, p.Y);
+        }
     }
 
     private static List<PlotPoint> SymPoints(int xc, int yc, int x, int y) =>
@@ -399,7 +410,10 @@ public static class CurveAlgorithms
     private static Dictionary<string, string> Dict(params (string k, string v)[] pairs)
     {
         var d = new Dictionary<string, string>();
-        foreach (var (k, v) in pairs) d[k] = v;
+        foreach (var (k, v) in pairs)
+        {
+            d[k] = v;
+        }
         return d;
     }
 }

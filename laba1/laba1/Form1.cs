@@ -12,94 +12,88 @@ public partial class Form1 : Form
     private Point? _firstPoint;
     private Bitmap _canvas = null!;
     private RasterResult? _lastResult;
-    private readonly List<(RasterResult result, Color color)> _layers = new();
+    private readonly List<(RasterResult result, Color color)> _layers = [];
     private bool _syncingStepSelection;
 
     // Кеш границ сетки для текущего шага
     private int _gridMinX, _gridMaxX, _gridMinY, _gridMaxY;
-    private Dictionary<(int X, int Y), float> _litCells = new();
+    private Dictionary<(int X, int Y), float> _litCells = [];
 
     public Form1()
     {
         InitializeComponent();
         KeyPreview = true;
-        WireEvents();
         ResetCanvas();
         UpdateToolUi();
         statusLabel.Text = ToolHint();
     }
 
-    private void WireEvents()
+    private void menuFileClear_Click(object? sender, EventArgs e) => ClearAll();
+
+    private void menuFileExit_Click(object? sender, EventArgs e) => Close();
+
+    private void menuHelpAbout_Click(object? sender, EventArgs e) => ShowHelp();
+
+    private void btnClear_Click(object? sender, EventArgs e) => ClearAll();
+
+    /// <summary>Общий обработчик меню и кнопок инструментов (Tag = DrawTool).</summary>
+    private void Tool_Click(object? sender, EventArgs e)
     {
-        menuFileClear.Click += (_, _) => ClearAll();
-        menuFileExit.Click += (_, _) => Close();
-
-        menuSegDda.Click += (_, _) => SetTool(DrawTool.LineDda);
-        menuSegBresenham.Click += (_, _) => SetTool(DrawTool.LineBresenham);
-        menuSegWu.Click += (_, _) => SetTool(DrawTool.LineWu);
-
-        menuCurveCircle.Click += (_, _) => SetTool(DrawTool.Circle);
-        menuCurveEllipse.Click += (_, _) => SetTool(DrawTool.Ellipse);
-        menuCurveHyperbola.Click += (_, _) => SetTool(DrawTool.Hyperbola);
-        menuCurveParabola.Click += (_, _) => SetTool(DrawTool.Parabola);
-
-        menuModeDebug.CheckedChanged += (_, _) =>
+        if (sender is ToolStripItem { Tag: DrawTool tool })
         {
-            _debugMode = menuModeDebug.Checked;
-            splitMain.Panel2Collapsed = !_debugMode;
-            if (_debugMode && splitMain.Width > 0)
+            SetTool(tool);
+        }
+    }
+
+    private void menuModeDebug_CheckedChanged(object? sender, EventArgs e)
+    {
+        _debugMode = menuModeDebug.Checked;
+        splitMain.Panel2Collapsed = !_debugMode;
+        if (_debugMode && splitMain.Width > 0)
+        {
+            var desired = Math.Max(splitMain.Panel2MinSize + splitMain.SplitterWidth,
+                (int)(splitMain.Width * 0.38));
+            splitMain.SplitterDistance = Math.Clamp(
+                splitMain.Width - desired,
+                splitMain.Panel1MinSize,
+                Math.Max(splitMain.Panel1MinSize, splitMain.Width - splitMain.Panel2MinSize - splitMain.SplitterWidth));
+        }
+        statusLabel.Text = _debugMode
+            ? "Отладочный режим: постройте фигуру — шаги появятся справа (сетка с прокруткой)"
+            : ToolHint();
+    }
+
+    private void pictureBox_Resize(object? sender, EventArgs e)
+    {
+        if (pictureBox.Width > 0 && pictureBox.Height > 0)
+        {
+            RebuildCanvasBitmap();
+        }
+    }
+
+    private void stepTrack_ValueChanged(object? sender, EventArgs e)
+    {
+        if (!_syncingStepSelection)
+        {
+            UpdateStepView(stepTrack.Value);
+        }
+    }
+
+    private void stepsGrid_SelectionChanged(object? sender, EventArgs e)
+    {
+        if (_syncingStepSelection)
+        {
+            return;
+        }
+
+        if (stepsGrid.CurrentRow is { Index: >= 0 } row)
+        {
+            var idx = Math.Min(stepTrack.Maximum, row.Index);
+            if (stepTrack.Value != idx)
             {
-                // Правая панель ~38% ширины, но не меньше минимума
-                int desired = Math.Max(splitMain.Panel2MinSize + splitMain.SplitterWidth,
-                    (int)(splitMain.Width * 0.38));
-                splitMain.SplitterDistance = Math.Clamp(
-                    splitMain.Width - desired,
-                    splitMain.Panel1MinSize,
-                    Math.Max(splitMain.Panel1MinSize, splitMain.Width - splitMain.Panel2MinSize - splitMain.SplitterWidth));
+                stepTrack.Value = idx;
             }
-            statusLabel.Text = _debugMode
-                ? "Отладочный режим: постройте фигуру — шаги появятся справа (сетка с прокруткой)"
-                : ToolHint();
-        };
-
-        menuHelpAbout.Click += (_, _) => ShowHelp();
-
-        btnDda.Click += (_, _) => SetTool(DrawTool.LineDda);
-        btnBresenham.Click += (_, _) => SetTool(DrawTool.LineBresenham);
-        btnWu.Click += (_, _) => SetTool(DrawTool.LineWu);
-        btnClear.Click += (_, _) => ClearAll();
-
-        btnCircle.Click += (_, _) => SetTool(DrawTool.Circle);
-        btnEllipse.Click += (_, _) => SetTool(DrawTool.Ellipse);
-        btnHyperbola.Click += (_, _) => SetTool(DrawTool.Hyperbola);
-        btnParabola.Click += (_, _) => SetTool(DrawTool.Parabola);
-
-        pictureBox.MouseClick += PictureBox_MouseClick;
-        pictureBox.Paint += PictureBox_Paint;
-        pictureBox.Resize += (_, _) =>
-        {
-            if (pictureBox.Width > 0 && pictureBox.Height > 0)
-                RebuildCanvasBitmap();
-        };
-
-        stepTrack.ValueChanged += (_, _) =>
-        {
-            if (!_syncingStepSelection)
-                UpdateStepView(stepTrack.Value);
-        };
-
-        stepsGrid.SelectionChanged += (_, _) =>
-        {
-            if (_syncingStepSelection) return;
-            if (stepsGrid.CurrentRow is { Index: >= 0 } row)
-            {
-                int idx = Math.Min(stepTrack.Maximum, row.Index);
-                if (stepTrack.Value != idx)
-                    stepTrack.Value = idx;
-            }
-        };
-
-        gridCanvas.Paint += GridCanvas_Paint;
+        }
     }
 
     private void SetTool(DrawTool tool)
@@ -134,15 +128,15 @@ public partial class Form1 : Form
         _ => "Выберите инструмент"
     };
 
-    private void ShowHelp()
+    private static void ShowHelp()
     {
         MessageBox.Show(
-            "1. Отрезки — ЦДА / Брезенхем / Ву (меню или панель «Отрезки»).\n" +
-            "2. Кривые — окружность, эллипс, гипербола, парабола (панель «Линии второго порядка»).\n" +
-            "3. Режим → «Отладочный режим» — сетка (с прокруткой) и таблица шагов.\n\n" +
-            "Построение — щелчками мыши по холсту (обычно две точки).\n" +
-            "В отладке разделитель между сеткой и таблицей можно двигать.",
-            "Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            @"1. Отрезки — ЦДА / Брезенхем / Ву (меню или панель «Отрезки»).\n" +
+            @"2. Кривые — окружность, эллипс, гипербола, парабола (панель «Линии второго порядка»).\n" +
+            @"3. Режим → «Отладочный режим» — сетка (с прокруткой) и таблица шагов.\n\n" +
+            @"Построение — щелчками мыши по холсту (обычно две точки).\n" +
+            @"В отладке разделитель между сеткой и таблицей можно двигать.",
+            @"Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ResetCanvas()
@@ -153,16 +147,20 @@ public partial class Form1 : Form
 
     private void RebuildCanvasBitmap()
     {
-        int w = Math.Max(1, pictureBox.ClientSize.Width);
-        int h = Math.Max(1, pictureBox.ClientSize.Height);
+        var w = Math.Max(1, pictureBox.ClientSize.Width);
+        var h = Math.Max(1, pictureBox.ClientSize.Height);
         var old = _canvas;
         _canvas = new Bitmap(w, h);
         using (var g = Graphics.FromImage(_canvas))
+        {
             g.Clear(Color.White);
-        old?.Dispose();
+        }
+        old.Dispose();
         pictureBox.Image = _canvas;
         foreach (var (result, color) in _layers)
+        {
             DrawPixelsOnly(result, color);
+        }
         pictureBox.Invalidate();
     }
 
@@ -175,21 +173,25 @@ public partial class Form1 : Form
         RebuildCanvasBitmap();
         stepsGrid.Rows.Clear();
         stepTrack.Maximum = 0;
-        stepInfo.Text = "Постройте фигуру — здесь появятся шаги алгоритма";
+        stepInfo.Text = @"Постройте фигуру — здесь появятся шаги алгоритма";
         gridCanvas.Size = new Size(200, 200);
         gridCanvas.Invalidate();
-        statusLabel.Text = "Холст очищен. " + ToolHint();
+        statusLabel.Text = @"Холст очищен. " + ToolHint();
     }
 
     private void PictureBox_MouseClick(object? sender, MouseEventArgs e)
     {
-        if (e.Button != MouseButtons.Left) return;
+        if (e.Button != MouseButtons.Left)
+        {
+            return;
+        }
+
         var p = e.Location;
 
         if (_firstPoint is null)
         {
             _firstPoint = p;
-            statusLabel.Text = $"Первая точка: ({p.X}, {p.Y}). Укажите вторую.";
+            statusLabel.Text = $@"Первая точка: ({p.X}, {p.Y}). Укажите вторую.";
             pictureBox.Invalidate();
             return;
         }
@@ -201,7 +203,7 @@ public partial class Form1 : Form
 
     private void CommitShape(Point a, Point b)
     {
-        RasterResult result = _tool switch
+        var result = _tool switch
         {
             DrawTool.LineDda => LineAlgorithms.Dda(a.X, a.Y, b.X, b.Y),
             DrawTool.LineBresenham => LineAlgorithms.Bresenham(a.X, a.Y, b.X, b.Y),
@@ -216,40 +218,41 @@ public partial class Form1 : Form
         _lastResult = result;
         _layers.Add((result, Color.Black));
         DrawResult(result, Color.Black);
-        statusLabel.Text = $"{_tool}: построено, пикселей={result.Pixels.Count}, шагов={result.Steps.Count}";
+        statusLabel.Text = $@"{_tool}: построено, пикселей={result.Pixels.Count}, шагов={result.Steps.Count}";
 
         if (_debugMode)
+        {
             LoadDebug(result);
+        }
     }
 
     private static RasterResult CircleFromPoints(Point c, Point p)
     {
-        int r = (int)Math.Round(Math.Sqrt((p.X - c.X) * (p.X - c.X) + (p.Y - c.Y) * (p.Y - c.Y)));
+        var r = (int)Math.Round(Math.Sqrt((p.X - c.X) * (p.X - c.X) + (p.Y - c.Y) * (p.Y - c.Y)));
         return CurveAlgorithms.Circle(c.X, c.Y, r);
     }
 
     private static RasterResult EllipseFromPoints(Point c, Point corner)
     {
-        int aa = Math.Abs(corner.X - c.X);
-        int bb = Math.Abs(corner.Y - c.Y);
+        var aa = Math.Abs(corner.X - c.X);
+        var bb = Math.Abs(corner.Y - c.Y);
         return CurveAlgorithms.Ellipse(c.X, c.Y, Math.Max(1, aa), Math.Max(1, bb));
     }
 
     private static RasterResult HyperbolaFromPoints(Point c, Point p)
     {
-        int a = Math.Max(1, Math.Abs(p.X - c.X));
-        int b = Math.Max(1, Math.Abs(p.Y - c.Y));
-        if (b == 0) b = Math.Max(1, a / 2);
-        int extent = Math.Max(a + 50, a * 2);
+        var a = Math.Max(1, Math.Abs(p.X - c.X));
+        var b = Math.Max(1, Math.Abs(p.Y - c.Y));
+        var extent = Math.Max(a + 50, a * 2);
         return CurveAlgorithms.Hyperbola(c.X, c.Y, a, b, extent);
     }
 
     private static RasterResult ParabolaFromPoints(Point vertex, Point p)
     {
-        int dx = Math.Max(1, Math.Abs(p.X - vertex.X));
-        int dy = Math.Abs(p.Y - vertex.Y);
-        int param = dy == 0 ? Math.Max(1, dx / 4) : Math.Max(1, (dy * dy) / (2 * dx));
-        int extent = Math.Max(dx, 40);
+        var dx = Math.Max(1, Math.Abs(p.X - vertex.X));
+        var dy = Math.Abs(p.Y - vertex.Y);
+        var param = dy == 0 ? Math.Max(1, dx / 4) : Math.Max(1, (dy * dy) / (2 * dx));
+        var extent = Math.Max(dx, 40);
         return CurveAlgorithms.Parabola(vertex.X, vertex.Y, param, extent);
     }
 
@@ -264,7 +267,9 @@ public partial class Form1 : Form
         foreach (var px in result.Pixels)
         {
             if (px.X < 0 || px.Y < 0 || px.X >= _canvas.Width || px.Y >= _canvas.Height)
+            {
                 continue;
+            }
 
             if (px.Intensity >= 0.999f)
             {
@@ -273,7 +278,7 @@ public partial class Form1 : Form
             else
             {
                 var bg = _canvas.GetPixel(px.X, px.Y);
-                float t = Math.Clamp(px.Intensity, 0f, 1f);
+                var t = Math.Clamp(px.Intensity, 0f, 1f);
                 var blended = Color.FromArgb(
                     (int)(color.R * t + bg.R * (1 - t)),
                     (int)(color.G * t + bg.G * (1 - t)),
@@ -287,7 +292,8 @@ public partial class Form1 : Form
     {
         if (_firstPoint is { } fp)
         {
-            using var pen = new Pen(Color.DodgerBlue, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dot };
+            using var pen = new Pen(Color.DodgerBlue, 1);
+            pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
             e.Graphics.DrawEllipse(pen, fp.X - 3, fp.Y - 3, 6, 6);
         }
     }
@@ -297,7 +303,7 @@ public partial class Form1 : Form
         stepsGrid.Rows.Clear();
         foreach (var s in result.Steps)
         {
-            string vars = string.Join(", ", s.Variables.Select(kv => $"{kv.Key}={kv.Value}"));
+            var vars = string.Join(", ", s.Variables.Select(kv => $"{kv.Key}={kv.Value}"));
             stepsGrid.Rows.Add(s.Index, s.Description, vars);
         }
 
@@ -311,7 +317,7 @@ public partial class Form1 : Form
     {
         if (_lastResult is null || _lastResult.Steps.Count == 0)
         {
-            stepInfo.Text = "Нет шагов";
+            stepInfo.Text = @"Нет шагов";
             _litCells.Clear();
             gridCanvas.Invalidate();
             return;
@@ -319,8 +325,11 @@ public partial class Form1 : Form
 
         index = Math.Clamp(index, 0, _lastResult.Steps.Count - 1);
         var step = _lastResult.Steps[index];
-        string vars = string.Join("  ", step.Variables.Select(kv => $"{kv.Key}={kv.Value}"));
-        stepInfo.Text = $"Шаг {index}/{_lastResult.Steps.Count - 1}: {step.Description}\n{vars}";
+        var vars = string.Join("  ", step.Variables.Select(kv => $"{kv.Key}={kv.Value}"));
+        stepInfo.Text = $"""
+                         Шаг {index}/{_lastResult.Steps.Count - 1}: {step.Description}
+                         {vars}
+                         """;
 
         RebuildLitCells(index);
         LayoutGridCanvas();
@@ -335,7 +344,9 @@ public partial class Form1 : Form
                 stepsGrid.ClearSelection();
                 stepsGrid.Rows[index].Selected = true;
                 if (stepsGrid.CanFocus)
+                {
                     stepsGrid.FirstDisplayedScrollingRowIndex = Math.Max(0, index - 2);
+                }
             }
         }
         finally
@@ -347,12 +358,17 @@ public partial class Form1 : Form
     private void RebuildLitCells(int upToStep)
     {
         _litCells = new Dictionary<(int X, int Y), float>();
-        if (_lastResult is null) return;
+        if (_lastResult is null)
+        {
+            return;
+        }
 
-        for (int i = 0; i <= upToStep && i < _lastResult.Steps.Count; i++)
+        for (var i = 0; i <= upToStep && i < _lastResult.Steps.Count; i++)
         {
             foreach (var p in _lastResult.Steps[i].Points)
+            {
                 _litCells[(p.X, p.Y)] = p.Intensity;
+            }
         }
 
         if (_litCells.Count == 0)
@@ -373,38 +389,45 @@ public partial class Form1 : Form
     /// </summary>
     private void LayoutGridCanvas()
     {
-        int cellsX = Math.Max(1, _gridMaxX - _gridMinX + 1);
-        int cellsY = Math.Max(1, _gridMaxY - _gridMinY + 1);
+        var cellsX = Math.Max(1, _gridMaxX - _gridMinX + 1);
+        var cellsY = Math.Max(1, _gridMaxY - _gridMinY + 1);
 
-        int width = GridPadding + cellsX * GridCellSize + GridPadding;
-        int height = GridPadding + cellsY * GridCellSize + GridPadding;
+        var width = GridPadding + cellsX * GridCellSize + GridPadding;
+        var height = GridPadding + cellsY * GridCellSize + GridPadding;
 
         // Не меньше области просмотра — чтобы короткие сетки выглядели нормально
         width = Math.Max(width, gridScrollHost.ClientSize.Width);
         height = Math.Max(height, gridScrollHost.ClientSize.Height);
 
         if (gridCanvas.Width != width || gridCanvas.Height != height)
+        {
             gridCanvas.Size = new Size(width, height);
+        }
     }
 
     private void ScrollToCurrentStep(int index)
     {
         if (_lastResult is null || index < 0 || index >= _lastResult.Steps.Count)
+        {
             return;
+        }
 
         var pts = _lastResult.Steps[index].Points;
-        if (pts.Count == 0) return;
+        if (pts.Count == 0)
+        {
+            return;
+        }
 
-        int avgX = (int)pts.Average(p => p.X);
-        int avgY = (int)pts.Average(p => p.Y);
+        var avgX = (int)pts.Average(p => p.X);
+        var avgY = (int)pts.Average(p => p.Y);
 
-        int px = GridPadding + (avgX - _gridMinX) * GridCellSize + GridCellSize / 2;
-        int py = GridPadding + (avgY - _gridMinY) * GridCellSize + GridCellSize / 2;
+        var px = GridPadding + (avgX - _gridMinX) * GridCellSize + GridCellSize / 2;
+        var py = GridPadding + (avgY - _gridMinY) * GridCellSize + GridCellSize / 2;
 
-        int viewW = Math.Max(1, gridScrollHost.ClientSize.Width);
-        int viewH = Math.Max(1, gridScrollHost.ClientSize.Height);
-        int targetX = Math.Max(0, px - viewW / 2);
-        int targetY = Math.Max(0, py - viewH / 2);
+        var viewW = Math.Max(1, gridScrollHost.ClientSize.Width);
+        var viewH = Math.Max(1, gridScrollHost.ClientSize.Height);
+        var targetX = Math.Max(0, px - viewW / 2);
+        var targetY = Math.Max(0, py - viewH / 2);
 
         // AutoScrollPosition при чтении даёт отрицательные значения; при записи — положительные
         gridScrollHost.AutoScrollPosition = new Point(targetX, targetY);
@@ -426,30 +449,32 @@ public partial class Form1 : Form
         using var axisFont = new Font("Consolas", 7);
         using var brush = new SolidBrush(Color.DimGray);
 
-        for (int y = _gridMinY; y <= _gridMaxY; y++)
-        for (int x = _gridMinX; x <= _gridMaxX; x++)
+        for (var y = _gridMinY; y <= _gridMaxY; y++)
         {
-            float px = GridPadding + (x - _gridMinX) * GridCellSize;
-            float py = GridPadding + (y - _gridMinY) * GridCellSize;
-            var rect = new RectangleF(px, py, GridCellSize, GridCellSize);
-            g.DrawRectangle(gridPen, px, py, GridCellSize, GridCellSize);
-
-            if (_litCells.TryGetValue((x, y), out float inten))
+            for (var x = _gridMinX; x <= _gridMaxX; x++)
             {
-                int a = (int)(Math.Clamp(inten, 0.2f, 1f) * 255);
-                using var fill = new SolidBrush(Color.FromArgb(a, Color.DarkBlue));
-                g.FillRectangle(fill, rect);
+                var px = GridPadding + (x - _gridMinX) * GridCellSize;
+                var py = GridPadding + (y - _gridMinY) * GridCellSize;
+                var rect = new RectangleF(px, py, GridCellSize, GridCellSize);
+                g.DrawRectangle(gridPen, px, py, GridCellSize, GridCellSize);
+
+                if (_litCells.TryGetValue((x, y), out var inten))
+                {
+                    var alpha = (int)(Math.Clamp(inten, 0.2f, 1f) * 255);
+                    using var fill = new SolidBrush(Color.FromArgb(alpha, Color.DarkBlue));
+                    g.FillRectangle(fill, rect);
+                }
             }
         }
 
-        int idx = stepTrack.Value;
+        var idx = stepTrack.Value;
         if (_lastResult is not null && idx >= 0 && idx < _lastResult.Steps.Count)
         {
             using var hi = new Pen(Color.OrangeRed, 2);
             foreach (var p in _lastResult.Steps[idx].Points)
             {
-                float px = GridPadding + (p.X - _gridMinX) * GridCellSize;
-                float py = GridPadding + (p.Y - _gridMinY) * GridCellSize;
+                var px = GridPadding + (p.X - _gridMinX) * GridCellSize;
+                var py = GridPadding + (p.Y - _gridMinY) * GridCellSize;
                 g.DrawRectangle(hi, px, py, GridCellSize, GridCellSize);
             }
         }
